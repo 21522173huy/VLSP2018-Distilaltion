@@ -47,11 +47,11 @@ def evaluate_model(model, test_dataloader, average = 'macro'):
     # Sentiment Classification Metrics (only for correctly identified aspects)
     correct_aspects = [true and pred for true, pred in zip(aspect_true, aspect_pred)]
     if np.any(correct_aspects):
-        sentiment_accuracy = accuracy_score([true for true, correct in zip(true_labels, correct_aspects) if correct],
-                                            [pred for pred, correct in zip(teacher_predictions, correct_aspects) if correct])
+        sentiment_accuracy = accuracy_score([true for true, correct in zip(y_true, correct_aspects) if correct],
+                                            [pred for pred, correct in zip(y_pred, correct_aspects) if correct])
         sentiment_precision, sentiment_recall, sentiment_f1, _ = precision_recall_fscore_support(
-            [true for true, correct in zip(true_labels, correct_aspects) if correct],
-            [pred for pred, correct in zip(teacher_predictions, correct_aspects) if correct],
+            [true for true, correct in zip(y_true, correct_aspects) if correct],
+            [pred for pred, correct in zip(y_pred, correct_aspects) if correct],
             average=average, zero_division=0)
     else:
         sentiment_accuracy = sentiment_precision = sentiment_recall = sentiment_f1 = 0
