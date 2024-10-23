@@ -113,20 +113,25 @@ def finetune_teacher(model,
         # Early Stopping
         early_stopping(val_loss, model)
 
-        print(f"Epoch {epoch+1}")
-        print(f"Train Loss: {train_loss:.4f}, Train Aspect Accuracy: {train_metrics['Aspect']['accuracy']:.4f}, "
-              f"Train Aspect Precision: {train_metrics['Aspect']['precision']:.4f}, Train Aspect Recall: {train_metrics['Aspect']['recall']:.4f}, "
-              f"Train Aspect F1: {train_metrics['Aspect']['f1']:.4f}")
-        print(f"Train Polarity Accuracy: {train_metrics['Polarity']['accuracy']:.4f}, "
-              f"Train Polarity Precision: {train_metrics['Polarity']['precision']:.4f}, Train Polarity Recall: {train_metrics['Polarity']['recall']:.4f}, "
-              f"Train Polarity F1: {train_metrics['Polarity']['f1']:.4f}")
-        print(f"Validation Loss: {val_loss:.4f}, Validation Aspect Accuracy: {val_metrics['Aspect']['accuracy']:.4f}, "
-              f"Validation Aspect Precision: {val_metrics['Aspect']['precision']:.4f}, Validation Aspect Recall: {val_metrics['Aspect']['recall']:.4f}, "
-              f"Validation Aspect F1: {val_metrics['Aspect']['f1']:.4f}")
-        print(f"Validation Polarity Accuracy: {val_metrics['Polarity']['accuracy']:.4f}, "
-              f"Validation Polarity Precision: {val_metrics['Polarity']['precision']:.4f}, Validation Polarity Recall: {val_metrics['Polarity']['recall']:.4f}, "
-              f"Validation Polarity F1: {val_metrics['Polarity']['f1']:.4f}")
-        print(f"Results in Test: {results}\n")
+        # Print statements
+        print(f"Epoch {1}")
+        print(f"Train Loss: {train_loss:.4f}")
+        print("Train Aspect Metrics:")
+        print(f"  Accuracy: {train_metrics['Aspect']['accuracy']:.4f} | Precision: {train_metrics['Aspect']['precision']:.4f} | Recall: {train_metrics['Aspect']['recall']:.4f} | F1: {train_metrics['Aspect']['f1']:.4f}")
+        print("Train Polarity Metrics:")
+        print(f"  Accuracy: {train_metrics['Polarity']['accuracy']:.4f} | Precision: {train_metrics['Polarity']['precision']:.4f} | Recall: {train_metrics['Polarity']['recall']:.4f} | F1: {train_metrics['Polarity']['f1']:.4f}")
+
+        print(f"\nValidation Loss: {val_loss:.4f}")
+        print("Validation Aspect Metrics:")
+        print(f"  Accuracy: {val_metrics['Aspect']['accuracy']:.4f} | Precision: {val_metrics['Aspect']['precision']:.4f} | Recall: {val_metrics['Aspect']['recall']:.4f} | F1: {val_metrics['Aspect']['f1']:.4f}")
+        print("Validation Polarity Metrics:")
+        print(f"  Accuracy: {val_metrics['Polarity']['accuracy']:.4f} | Precision: {val_metrics['Polarity']['precision']:.4f} | Recall: {val_metrics['Polarity']['recall']:.4f} | F1: {val_metrics['Polarity']['f1']:.4f}")
+
+        print("\nResults in Test:")
+        print("Test Aspect Metrics:")
+        print(f"  Accuracy: {results['Aspect']['accuracy_score']:.4f} | Precision: {results['Aspect']['precision_score']:.4f} | Recall: {results['Aspect']['recall_score']:.4f} | F1: {results['Aspect']['f1_score']:.4f}")
+        print("Test Polarity Metrics:")
+        print(f"  Accuracy: {results['Polarity']['accuracy_score']:.4f} | Precision: {results['Polarity']['precision_score']:.4f} | Recall: {results['Polarity']['recall_score']:.4f} | F1: {results['Polarity']['f1_score']:.4f}")
 
         # Save Best F1-score checkpoint
         if results['Polarity']['f1_score'] > best_f1_score:
