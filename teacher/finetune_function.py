@@ -51,6 +51,10 @@ def step(model, dataloader, optimizer, criterion, device, max_grad_norm=1.0, mod
         preds_flat = preds.view(-1).cpu().numpy()
         labels_flat = labels.view(-1).cpu().numpy()
 
+        # Aspect Identification Metrics
+        aspect_true = labels_flat != 0  # True aspects are those that are not 'None'
+        aspect_pred = preds_flat != 0  # Predicted aspects are those that are not 'None'
+
         if np.any(aspect_true) and np.any(aspect_pred):
             aspect_accuracy = accuracy_score(aspect_true, aspect_pred)
             aspect_precision, aspect_recall, aspect_f1, _ = precision_recall_fscore_support(aspect_true, aspect_pred, average=average, zero_division=0)
