@@ -63,6 +63,12 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     print(tokenizer.decode(sample['input_ids'][0], skip_special_tokens = True))
 
+    # Import Model
+    model = ASBA_PhoBertCustomModel(roberta_version = args.model_name, 
+                                    num_labels = train_dataset.num_labels(),
+                                    num_epochs_freeze = args.num_epochs_freeze,
+                                    unfreeze_steps = args.unfreeze_steps,)
+
     # Finetuning Config
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(params=model.parameters(), lr=3e-04, betas=(0.9, 0.98), weight_decay=1e-3)
@@ -71,13 +77,6 @@ def main():
     num_training_steps = args.epochs * len(train_dataloader)
     num_warmup_steps = 10000
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_steps)
-
-
-    # Import Model
-    model = ASBA_PhoBertCustomModel(roberta_version = args.model_name, 
-                                    num_labels = train_dataset.num_labels(),
-                                    num_epochs_freeze = args.num_epochs_freeze,
-                                    unfreeze_steps = args.unfreeze_steps,)
     
     # Finetuning
     train_loss, test_loss, train_metrics, test_metrics = finetune_teacher(model=model,
