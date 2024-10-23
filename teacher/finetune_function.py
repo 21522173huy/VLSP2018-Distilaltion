@@ -98,7 +98,7 @@ def finetune_teacher(model,
         print("Validating")
         val_loss, val_metrics = step(model, val_dataloader, optimizer, criterion, device, max_grad_norm, mode='Val')
         print('Testing')
-        results, y_true, y_pred = evaluate_model(model, test_dataloader, average = 'micro')
+        results, y_true, y_pred = evaluate_model(model, test_dataloader, average = 'macro')
 
         # Obtain Loss and Metrics
         train_losses.append(train_loss)
