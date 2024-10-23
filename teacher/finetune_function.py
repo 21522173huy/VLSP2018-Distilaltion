@@ -27,7 +27,7 @@ def step(model, dataloader, optimizer, criterion, device, max_grad_norm=1.0, mod
     }
 
     for batch in tqdm(dataloader):
-        input_ids, attention_mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
+        input_ids, attention_mask = batch['input_ids'].to(device), batch['attention_mask'].float().to(device)
         labels = batch['labels'].to(device)
 
         with torch.set_grad_enabled(mode == 'Train'):
