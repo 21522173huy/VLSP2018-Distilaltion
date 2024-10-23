@@ -1,0 +1,151 @@
+from tqdm import tqdm
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from evaluation import evaluate_model
+import torch
+from early_stopping import EarlyStopping
+import json
+
+def step(model, dataloader, optimizer, criterion, device, max_grad_norm=1.0, mode='Train', average='macro'):
+    if mode == 'Train': model.train()
+    else: model.eval()
+
+    total_loss = 0
+    metrics_epoch = {
+        'Aspect': {
+            'accuracy': 0,
+            'precision': 0, 
+            'recall': 0, 
+            'f1': 0
+        },
+        'Polarity': {
+            'accuracy': 0, 
+            'precision': 0, 
+            'recall': 0, 
+            'f1': 0
+        }
+    }
+
+    for batch in tqdm(dataloader):
+        input_ids, attention_mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
+        labels = batch['labels'].to(device)
+
+        with torch.set_grad_enabled(mode == 'Train'):
+            output = model(input_ids=input_ids, attention_mask=attention_mask)
+            loss = criterion(output.mT, labels)
+
+            # Backward
+            if mode == 'Train':
+                optimizer.zero_grad()
+                loss.backward()
+                # torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+                optimizer.step()    
+
+        # Loss and Metrics
+        total_loss += loss.item()
+        
+        # Prediction
+        preds = output.argmax(dim=-1)
+
+        # Flatten predictions and labels for evaluation
+        preds_flat = preds.view(-1).cpu().numpy()
+        labels_flat = labels.view(-1).cpu().numpy()
+
+        # Aspect Identification Metrics
+        aspect_true = labels_flat != 0  # True aspects are those that are not 'None'
+        aspect_pred = preds_flat != 0  # Predicted aspects are those that are not 'None'
+
+        aspect_accuracy = accuracy_score(aspect_true, aspect_pred)
+        aspect_precision, aspect_recall, aspect_f1, _ = precision_recall_fscore_support(aspect_true, aspect_pred, average=average, zero_division=0)
+
+        # Sentiment Classification Metrics (only for correctly identified aspects)
+        correct_aspects = aspect_true & aspect_pred
+        sentiment_accuracy = accuracy_score(labels_flat[correct_aspects], preds_flat[correct_aspects])
+        sentiment_precision, sentiment_recall, sentiment_f1, _ = precision_recall_fscore_support(labels_flat[correct_aspects], preds_flat[correct_aspects], average=average, zero_division=0)
+
+        metrics_epoch['Aspect']['accuracy'] += aspect_accuracy
+        metrics_epoch['Aspect']['precision'] += aspect_precision
+        metrics_epoch['Aspect']['recall'] += aspect_recall
+        metrics_epoch['Aspect']['f1'] += aspect_f1
+        metrics_epoch['Polarity']['accuracy'] += sentiment_accuracy
+        metrics_epoch['Polarity']['precision'] += sentiment_precision
+        metrics_epoch['Polarity']['recall'] += sentiment_recall
+        metrics_epoch['Polarity']['f1'] += sentiment_f1
+
+    avg_loss = total_loss / len(dataloader)
+    avg_metrics = {k: {metric: v / len(dataloader) for metric, v in metrics.items()} for k, metrics in metrics_epoch.items()}
+
+    return avg_loss, avg_metrics
+
+def finetune_teacher(model, 
+                     train_dataloader, val_dataloader, test_dataloader, 
+                     optimizer, criterion, scheduler, epochs, 
+                     checkpoint_path, result_path,
+                     max_grad_norm=1.0, patience=5):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model.to(device)
+
+    train_losses, val_losses = [], []
+    train_metrics_list, val_metrics_list = [], []
+
+    best_f1_score = float(-1)
+    # Initialize EarlyStopping
+    early_stopping = EarlyStopping(patience=patience, verbose=True, path=checkpoint_path)
+
+    for epoch in range(epochs):
+        # Loss and Metrics
+        print("Training")
+        train_loss, train_metrics = step(model, train_dataloader, optimizer, criterion, device, max_grad_norm, mode='Train')
+        print("Validating")
+        val_loss, val_metrics = step(model, val_dataloader, optimizer, criterion, device, max_grad_norm, mode='Val')
+        print('Testing')
+        results, y_true, y_pred = evaluate_model(model, test_dataloader, average = 'micro')
+
+        # Obtain Loss and Metrics
+        train_losses.append(train_loss)
+        train_metrics_list.append(train_metrics)
+        val_losses.append(val_loss)
+        val_metrics_list.append(val_metrics)
+
+        # Step the scheduler
+        # scheduler.step(val_loss)
+        scheduler.step()
+
+        # Early Stopping
+        early_stopping(val_loss, model)
+
+        print(f"Epoch {epoch+1}")
+        print(f"Train Loss: {train_loss:.4f}, Train Aspect Accuracy: {train_metrics['Aspect']['accuracy']:.4f}, "
+              f"Train Aspect Precision: {train_metrics['Aspect']['precision']:.4f}, Train Aspect Recall: {train_metrics['Aspect']['recall']:.4f}, "
+              f"Train Aspect F1: {train_metrics['Aspect']['f1']:.4f}")
+        print(f"Train Polarity Accuracy: {train_metrics['Polarity']['accuracy']:.4f}, "
+              f"Train Polarity Precision: {train_metrics['Polarity']['precision']:.4f}, Train Polarity Recall: {train_metrics['Polarity']['recall']:.4f}, "
+              f"Train Polarity F1: {train_metrics['Polarity']['f1']:.4f}")
+        print(f"Validation Loss: {val_loss:.4f}, Validation Aspect Accuracy: {val_metrics['Aspect']['accuracy']:.4f}, "
+              f"Validation Aspect Precision: {val_metrics['Aspect']['precision']:.4f}, Validation Aspect Recall: {val_metrics['Aspect']['recall']:.4f}, "
+              f"Validation Aspect F1: {val_metrics['Aspect']['f1']:.4f}")
+        print(f"Validation Polarity Accuracy: {val_metrics['Polarity']['accuracy']:.4f}, "
+              f"Validation Polarity Precision: {val_metrics['Polarity']['precision']:.4f}, Validation Polarity Recall: {val_metrics['Polarity']['recall']:.4f}, "
+              f"Validation Polarity F1: {val_metrics['Polarity']['f1']:.4f}")
+        print(f"Results in Test: {results}\n")
+
+        # Save Best F1-score checkpoint
+        if results['Polarity']['f1_score'] > best_f1_score:
+            best_f1_score = results['Polarity']['f1_score']
+            torch.save({
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, checkpoint_path)
+            
+            with open(result_path, 'w') as f:
+                json.dump({
+                    'results': results,
+                    'y_true': y_true,
+                    'y_pred': y_pred,
+                }, f, indent=4)
+
+        # Stop
+        if early_stopping.early_stop:
+            print("Early stopping")
+            break
+
+    return train_losses, val_losses, train_metrics_list, val_metrics_list
