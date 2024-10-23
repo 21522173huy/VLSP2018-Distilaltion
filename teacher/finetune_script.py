@@ -79,6 +79,7 @@ def main():
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_steps)
     
     # Finetuning
+    save_name = args.model_name.split('/')[-1]
     train_loss, test_loss, train_metrics, test_metrics = finetune_teacher(model=model,
                                                                           train_dataloader=train_dataloader,
                                                                           val_dataloader=val_dataloader,
@@ -86,8 +87,8 @@ def main():
                                                                           optimizer=optimizer,
                                                                           criterion=criterion,
                                                                           scheduler=scheduler,
-                                                                          checkpoint_path = f'teacher/checkpoints/{args.model_name}-Teacher-best.pt',
-                                                                          result_path = f'teacher/checkpoints/{args.model_name}-Teacher-results.json',
+                                                                          checkpoint_path = f'teacher/checkpoints/{save_name}-Teacher-best.pt',
+                                                                          result_path = f'teacher/checkpoints/{save_name}-Teacher-results.json',
                                                                           max_grad_norm=1.0,
                                                                           epochs=args.epochs,
                                                                           patience=5)
