@@ -34,6 +34,10 @@ def evaluate_model(model, test_dataloader, average = 'macro'):
             y_pred.extend(preds_flat.tolist())
             y_true.extend(labels_flat.tolist())
 
+    # Aspect Identification Metrics
+    aspect_true = [label != 0 for label in y_true]  # True aspects are those that are not 'None'
+    aspect_pred = [pred != 0 for pred in y_pred]  # Predicted aspects are those that are not 'None'
+
     if np.any(aspect_true) and np.any(aspect_pred):
         aspect_accuracy = accuracy_score(aspect_true, aspect_pred)
         aspect_precision, aspect_recall, aspect_f1, _ = precision_recall_fscore_support(aspect_true, aspect_pred, average=average, zero_division=0)
