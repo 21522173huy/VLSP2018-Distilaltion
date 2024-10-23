@@ -34,22 +34,23 @@ def evaluate_model(model, test_dataloader, average = 'macro'):
             y_pred.extend(preds_flat.tolist())
             y_true.extend(labels_flat.tolist())
 
-    # Aspect Identification Metrics
-    aspect_true = [label != 0 for label in y_true]  # True aspects are those that are not 'None'
-    aspect_pred = [pred != 0 for pred in y_pred]  # Predicted aspects are those that are not 'None'
-
-    aspect_accuracy = accuracy_score(aspect_true, aspect_pred)
-    aspect_precision, aspect_recall, aspect_f1, _ = precision_recall_fscore_support(aspect_true, aspect_pred, average=average, zero_division=0)
+    if np.any(aspect_true) and np.any(aspect_pred):
+        aspect_accuracy = accuracy_score(aspect_true, aspect_pred)
+        aspect_precision, aspect_recall, aspect_f1, _ = precision_recall_fscore_support(aspect_true, aspect_pred, average=average, zero_division=0)
+    else:
+        aspect_accuracy = aspect_precision = aspect_recall = aspect_f1 = 0
 
     # Sentiment Classification Metrics (only for correctly identified aspects)
     correct_aspects = [true and pred for true, pred in zip(aspect_true, aspect_pred)]
-
-    sentiment_accuracy = accuracy_score([true for true, correct in zip(y_true, correct_aspects) if correct],
-                                        [pred for pred, correct in zip(y_pred, correct_aspects) if correct])
-    sentiment_precision, sentiment_recall, sentiment_f1, _ = precision_recall_fscore_support(
-        [true for true, correct in zip(y_true, correct_aspects) if correct],
-        [pred for pred, correct in zip(y_pred, correct_aspects) if correct],
-        average=average, zero_division=0)
+    if np.any(correct_aspects):
+        sentiment_accuracy = accuracy_score([true for true, correct in zip(true_labels, correct_aspects) if correct],
+                                            [pred for pred, correct in zip(teacher_predictions, correct_aspects) if correct])
+        sentiment_precision, sentiment_recall, sentiment_f1, _ = precision_recall_fscore_support(
+            [true for true, correct in zip(true_labels, correct_aspects) if correct],
+            [pred for pred, correct in zip(teacher_predictions, correct_aspects) if correct],
+            average=average, zero_division=0)
+    else:
+        sentiment_accuracy = sentiment_precision = sentiment_recall = sentiment_f1 = 0
     
     # Save results to a JSON file
     results = {
