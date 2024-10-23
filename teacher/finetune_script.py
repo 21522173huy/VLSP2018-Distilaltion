@@ -61,7 +61,7 @@ def main():
     sample = next(iter(train_dataloader))
     print('Sample Shape: ', sample.input_ids.shape)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    print(tokenizer.decode(sample.input_ids[0], skip_special_tokens = True))
+    print(tokenizer.decode(sample['input_ids'][0], skip_special_tokens = True))
 
     # Finetuning Config
     criterion = nn.CrossEntropyLoss()
