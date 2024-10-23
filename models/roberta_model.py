@@ -41,10 +41,10 @@ class ASBA_PhoBertCustomModel(nn.Module):
 
         print(f"Using device: {self.device}")
 
-        print(f'Train Only Classifier Layer')
         self.set_up_layer()
 
     def set_up_layer(self):
+        print(f'Train Only Classifier Layer')
         for param in self.embeddings.parameters():
             param.requires_grad = False
         for param in self.encoder.parameters():

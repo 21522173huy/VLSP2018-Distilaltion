@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 import torch
 
-def evaluate_model(model, test_dataloader, average = 'macro', save_score_path='evaluation_results.json', save_prediction_path='Teacher-Student-Prediction.json'):
+def evaluate_model(model, test_dataloader, average = 'macro'):
     model.eval(), model.to('cuda')
 
     y_pred = []
@@ -66,9 +66,5 @@ def evaluate_model(model, test_dataloader, average = 'macro', save_score_path='e
             "f1_score": sentiment_f1
         }
     }
-
-    # import json
-    # with open('results.json', 'w') as f:
-    #     json.dump(results, f, indent=4)
 
     return results, y_pred, y_true

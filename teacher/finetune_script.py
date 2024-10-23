@@ -41,7 +41,7 @@ def get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_st
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--teacher_name', type=str, required=True)
+    parser.add_argument('--model_name', type=str, required=True)
     parser.add_argument('--epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--num_epochs_freeze', type=int, default=2)
@@ -60,7 +60,7 @@ def main():
     # Check whether English version is used correctly
     sample = next(iter(train_dataloader))
     print('Sample Shape: ', sample.input_ids.shape)
-    tokenizer = AutoTokenizer.from_pretrained(args.teacher_name)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     print(tokenizer.decode(sample.input_ids[0], skip_special_tokens = True))
 
     # Finetuning Config
@@ -74,7 +74,7 @@ def main():
 
 
     # Import Model
-    model = ASBA_PhoBertCustomModel(roberta_version = args.teacher_name, 
+    model = ASBA_PhoBertCustomModel(roberta_version = args.model_name, 
                                     num_labels = train_dataset.num_labels(),
                                     num_epochs_freeze = args.num_epochs_freeze,
                                     unfreeze_steps = args.unfreeze_steps,)
@@ -87,8 +87,8 @@ def main():
                                                                           optimizer=optimizer,
                                                                           criterion=criterion,
                                                                           scheduler=scheduler,
-                                                                          checkpoint_path = f'teacher/checkpoints/{args.teacher_name}-Teacher-best.pt',
-                                                                          result_path = f'teacher/checkpoints/{args.teacher_name}-Teacher-results.json',
+                                                                          checkpoint_path = f'teacher/checkpoints/{args.model_name}-Teacher-best.pt',
+                                                                          result_path = f'teacher/checkpoints/{args.model_name}-Teacher-results.json',
                                                                           max_grad_norm=1.0,
                                                                           epochs=args.epochs,
                                                                           patience=5)
@@ -106,7 +106,7 @@ def main():
 
     # # Save results to a JSON file
     # import json
-    # id = args.teacher_name.split('/')[-1]
+    # id = args.model_name.split('/')[-1]
     # with open(f'{id}_results.json', 'w') as f:
     #     json.dump(results, f, indent=4)
 
