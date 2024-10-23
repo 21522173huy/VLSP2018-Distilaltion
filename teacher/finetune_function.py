@@ -4,6 +4,7 @@ from evaluation import evaluate_model
 import torch
 from early_stopping import EarlyStopping
 import json
+import numpy as np
 
 def step(model, dataloader, optimizer, criterion, device, max_grad_norm=1.0, mode='Train', average='macro'):
     if mode == 'Train': model.train()
@@ -50,17 +51,19 @@ def step(model, dataloader, optimizer, criterion, device, max_grad_norm=1.0, mod
         preds_flat = preds.view(-1).cpu().numpy()
         labels_flat = labels.view(-1).cpu().numpy()
 
-        # Aspect Identification Metrics
-        aspect_true = labels_flat != 0  # True aspects are those that are not 'None'
-        aspect_pred = preds_flat != 0  # Predicted aspects are those that are not 'None'
-
-        aspect_accuracy = accuracy_score(aspect_true, aspect_pred)
-        aspect_precision, aspect_recall, aspect_f1, _ = precision_recall_fscore_support(aspect_true, aspect_pred, average=average, zero_division=0)
+        if np.any(aspect_true) and np.any(aspect_pred):
+            aspect_accuracy = accuracy_score(aspect_true, aspect_pred)
+            aspect_precision, aspect_recall, aspect_f1, _ = precision_recall_fscore_support(aspect_true, aspect_pred, average=average, zero_division=0)
+        else:
+            aspect_accuracy = aspect_precision = aspect_recall = aspect_f1 = 0
 
         # Sentiment Classification Metrics (only for correctly identified aspects)
         correct_aspects = aspect_true & aspect_pred
-        sentiment_accuracy = accuracy_score(labels_flat[correct_aspects], preds_flat[correct_aspects])
-        sentiment_precision, sentiment_recall, sentiment_f1, _ = precision_recall_fscore_support(labels_flat[correct_aspects], preds_flat[correct_aspects], average=average, zero_division=0)
+        if np.any(correct_aspects):
+            sentiment_accuracy = accuracy_score(labels_flat[correct_aspects], preds_flat[correct_aspects])
+            sentiment_precision, sentiment_recall, sentiment_f1, _ = precision_recall_fscore_support(labels_flat[correct_aspects], preds_flat[correct_aspects], average=average, zero_division=0)
+        else:
+            sentiment_accuracy = sentiment_precision = sentiment_recall = sentiment_f1 = 0
 
         metrics_epoch['Aspect']['accuracy'] += aspect_accuracy
         metrics_epoch['Aspect']['precision'] += aspect_precision
