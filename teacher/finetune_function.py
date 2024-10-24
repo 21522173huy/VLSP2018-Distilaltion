@@ -124,7 +124,7 @@ def finetune_teacher(model,
         early_stopping(val_loss, model)
 
         # Print statements
-        print(f"Epoch {1}")
+        print(f"Epoch {epoch + 1}")
         print(f"Train Loss: {train_loss:.4f}")
         print("Train Aspect Metrics:")
         print(f"  Accuracy: {train_metrics['Aspect']['accuracy']:.4f} | Precision: {train_metrics['Aspect']['precision']:.4f} | Recall: {train_metrics['Aspect']['recall']:.4f} | F1: {train_metrics['Aspect']['f1']:.4f}")
