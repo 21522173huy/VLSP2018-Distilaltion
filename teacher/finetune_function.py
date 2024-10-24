@@ -27,8 +27,6 @@ def step(model, dataloader, optimizer, criterion, device, max_grad_norm=1.0, mod
     }
 
     for batch in tqdm(dataloader):
-        # Gradual unFreezing
-        model.count_epochs()
         
         input_ids, attention_mask = batch['input_ids'].to(device), batch['attention_mask'].float().to(device)
         labels = batch['labels'].to(device)
@@ -102,6 +100,10 @@ def finetune_teacher(model,
     early_stopping = EarlyStopping(patience=patience, verbose=True, path=checkpoint_path)
 
     for epoch in range(epochs):
+        
+        # Gradual unFreezing
+        model.count_epochs()
+        
         # Loss and Metrics
         print("Training")
         train_loss, train_metrics = step(model, train_dataloader, optimizer, criterion, device, max_grad_norm, mode='Train')
