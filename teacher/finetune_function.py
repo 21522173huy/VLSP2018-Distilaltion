@@ -27,6 +27,9 @@ def step(model, dataloader, optimizer, criterion, device, max_grad_norm=1.0, mod
     }
 
     for batch in tqdm(dataloader):
+        # Gradual unFreezing
+        model.count_epochs()
+        
         input_ids, attention_mask = batch['input_ids'].to(device), batch['attention_mask'].float().to(device)
         labels = batch['labels'].to(device)
 
