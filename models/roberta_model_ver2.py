@@ -122,9 +122,10 @@ class VLSP2018MultiTask_Huy(nn.Module):
 
         self.num_labels = num_labels
         self.pretrained_bert = AutoModel.from_pretrained(roberta_version, output_hidden_states=True)
+        self.hidden_size = self.pretrained_bert.config.hidden_size
         self.dropout = nn.Dropout(0.2)
         self.classifiers = nn.ModuleList([
-            nn.Linear(768 * 4, 4)
+            nn.Linear(self.hidden_size * 4, 4)
             for _ in range(self.num_labels)
         ])
         self.flatten_onehot_labels = nn.Linear(4 * self.num_labels, 4 * self.num_labels)
