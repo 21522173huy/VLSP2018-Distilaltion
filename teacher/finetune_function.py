@@ -147,7 +147,7 @@ def finetune_teacher(model, ver,
         scheduler.step()
 
         # Early Stopping
-        early_stopping(val_loss, model)
+        early_stopping(val_loss, model, optimizer, scheduler)
 
         # Print statements
         print(f"Epoch {epoch + 1}")
