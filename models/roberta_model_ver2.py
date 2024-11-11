@@ -164,14 +164,14 @@ class VLSP2018MultiTask_Huy(nn.Module):
         if self.all_layers_unfrozen:
             return
 
-        total_layers = len(self.encoder.layer)
+        total_layers = len(self.pretrained_bert.encoder.layer)
 
         start_layer = total_layers - (self.current_unfreeze_step * self.unfreeze_steps)
         end_layer = total_layers - ((self.current_unfreeze_step - 1) * self.unfreeze_steps)
         start_layer = max(start_layer, 0)  # Ensure we don't go below 0
 
         for i in range(start_layer, end_layer):
-            for param in self.encoder.layer[i].parameters():
+            for param in self.pretrained_bert.encoder.layer[i].parameters():
                 param.requires_grad = True
         print(f"Unfroze layers {start_layer} to {end_layer - 1}")
 
