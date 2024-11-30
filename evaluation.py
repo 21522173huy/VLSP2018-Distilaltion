@@ -23,7 +23,7 @@ def evaluate_model(model, ver, test_dataloader, average = 'macro'):
             labels = batch['labels'].to('cuda')
 
             # Predictions from the teacher model
-            output = model(input_ids, attention_mask=attention_mask)
+            output, _, _ = model(input_ids, attention_mask=attention_mask)
             
             # Prediction
             if ver == 1:
