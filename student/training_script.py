@@ -58,8 +58,8 @@ def str2bool(v):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pred_distill', action='store_true')
-    parser.add_argument('--student_checkpoint', action='store_true')
+    parser.add_argument('--pred_distill', type = str2bool, default = False)
+    parser.add_argument('--student_checkpoint', default = '', type=str)
     parser.add_argument('--teacher_ver', type=int, required=True, default = 1)
     parser.add_argument('--teacher_name', type=str, required=True)
     parser.add_argument('--teacher_checkpoint', type=str, required=True)
@@ -124,7 +124,7 @@ def main():
     teacher_checkpoint = torch.load(args.teacher_checkpoint, map_location='cuda')
     load_checkpoint(teacher_model, teacher_checkpoint)
     
-    if args.student_checkpoint:
+    if args.student_checkpoint != '':
         student_checkpoint = torch.load(args.student_checkpoint, map_location='cuda')
         load_checkpoint(student_model, student_checkpoint) 
         
