@@ -124,7 +124,7 @@ class VLSP2018MultiTask_Huy(nn.Module):
         if num_layers is not None: # For Student Implementation
             config = AutoConfig.from_pretrained(roberta_version)
             config.num_hidden_layers = num_layers
-            config._attn_implementation = 'eager'
+            config.attn_implementation = 'eager'
             self.pretrained_bert = AutoModel.from_config(config)
             self.pretrained_bert.init_weights()
         
