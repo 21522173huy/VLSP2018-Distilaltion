@@ -27,6 +27,12 @@ else:
 
 from torch.optim.lr_scheduler import LambdaLR
 
+def load_checkpoint(model, checkpoint):
+  if len(checkpoint.keys()) == 3:
+    model.load_state_dict(checkpoint['model_state_dict'])
+  else:
+    model.load_state_dict(checkpoint)
+
 def get_linear_schedule_with_warmup(optimizer, num_warmup_steps, num_training_steps):
     def lr_lambda(current_step):
         if current_step < num_warmup_steps:
@@ -53,6 +59,7 @@ def str2bool(v):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--pred_distill', action='store_true')
+    parser.add_argument('--student_checkpoint', action='store_true')
     parser.add_argument('--teacher_ver', type=int, required=True, default = 1)
     parser.add_argument('--teacher_name', type=str, required=True)
     parser.add_argument('--teacher_checkpoint', type=str, required=True)
@@ -93,7 +100,14 @@ def main():
         student_model = VLSP2018MultiTask_Huy(roberta_version = args.teacher_name,
                                               num_labels = train_dataset.num_labels(),
                                               num_layers = args.num_student_layers,)
-
+        
+    teacher_checkpoint = torch.load(args.teacher_checkpoint', map_location='cuda')
+    load_checkpoint(teacher_model, teacher_checkpoint)
+    
+    if args.student_checkpoint:
+        student_checkpoint = torch.load(args.student_checkpoint', map_location='cuda')
+        load_checkpoint(student_model, student_checkpoint) 
+        
     student_params = sum(p.numel() for p in student_model.parameters() if p.requires_grad)
     print(f"Number of student model parameters: {student_params:.1f}M")
     # Finetuning Config
