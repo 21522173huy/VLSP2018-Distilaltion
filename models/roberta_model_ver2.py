@@ -1,6 +1,6 @@
 
 import torch
-from transformers import AutoModel
+from transformers import AutoModel, AutoConfig
 from torch import nn
 
 class ClassifierLayer(nn.Module):
@@ -117,11 +117,19 @@ class ASBA_PhoBertCustomModel(nn.Module):
           return logits.view(-1, self.num_labels * 4) # (batch_size, 34 * 4)
 
 class VLSP2018MultiTask_Huy(nn.Module):
-    def __init__(self, roberta_version, num_labels, num_epochs_freeze = 2, unfreeze_steps = 1, freeze_layers = True):
+    def __init__(self, roberta_version, num_labels, num_layers = None, num_epochs_freeze = 2, unfreeze_steps = 1, freeze_layers = True):
         super(VLSP2018MultiTask_Huy, self).__init__()
 
         self.num_labels = num_labels
-        self.pretrained_bert = AutoModel.from_pretrained(roberta_version, output_hidden_states=True)
+        if num_layers is not None: # For Student Implementation
+            config = AutoConfig.from_pretrained(roberta_version)
+            config.num_hidden_layers = num_layers
+            self.pretrained_bert = AutoModel.from_config(config)
+            self.pretrained_bert.init_weights()
+        
+        else:
+            self.pretrained_bert = AutoModel.from_pretrained(roberta_version, output_hidden_states=True)
+            
         self.hidden_size = self.pretrained_bert.config.hidden_size
         self.dropout = nn.Dropout(0.2)
         self.classifiers = nn.ModuleList([
@@ -191,10 +199,16 @@ class VLSP2018MultiTask_Huy(nn.Module):
         self.current_epoch += 1
 
     def forward(self, input_ids, attention_mask=None):
-        outputs = self.pretrained_bert(input_ids=input_ids, attention_mask=attention_mask)
-        hidden_states = outputs.hidden_states[-4:]  # Last 4 hidden states
-        pooled_output = torch.cat(hidden_states, dim=-1)[:, 0, :]  # Concatenate and take the [CLS] token
+        outputs = self.pretrained_bert(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True, output_attentions=True)
+        
+        hidden_states = outputs.hidden_states  # All hidden states
+        attentions = outputs.attentions  # All attention scores
+        
+        pooled_output = torch.cat(hidden_states[-4:], dim=-1)[:, 0, :]  # Concatenate last 4 hidden states and take the [CLS] token
         x = self.dropout(pooled_output)
 
-        outputs = [classifier(x) for classifier in self.classifiers]
-        return self.flatten_onehot_labels(torch.cat(outputs, dim=-1))
+        classifier_outputs = [classifier(x) for classifier in self.classifiers]
+        flattened_output = self.flatten_onehot_labels(torch.cat(classifier_outputs, dim=-1))
+        
+        return flattened_output, attentions, hidden_states
+

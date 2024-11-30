@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModel
+from transformers import AutoModel, AutoConfig
 from torch import nn
 
 class ClassifierLayer(nn.Module):
@@ -20,21 +20,28 @@ class ClassifierLayer(nn.Module):
         return x
 
 class ASBA_PhoBertCustomModel(nn.Module):
-    def __init__(self, roberta_version: str, num_labels: int, num_epochs_freeze=2, unfreeze_steps=1, loss = 'cross-entropy', freeze_layers=True):
+    def __init__(self, roberta_version: str, num_labels: int, num_layers = None, num_epochs_freeze=2, unfreeze_steps=1, loss='cross-entropy', freeze_layers=True):
         super(ASBA_PhoBertCustomModel, self).__init__()
-        base = AutoModel.from_pretrained(roberta_version)
+        if num_layers is not None: # For Student Implementation
+            config = AutoConfig.from_pretrained(roberta_version)
+            config.num_hidden_layers = num_layers
+            base = AutoModel.from_config(config)
+            base.init_weights()
+        else:
+            base = AutoModel.from_pretrained(roberta_version)
+
         self.hidden_size = base.config.hidden_size
 
         # Embedding
         self.embeddings = base.embeddings
 
-        # BLocks
+        # Blocks
         self.encoder = base.encoder
 
         # Classifier
         self.classifier = ClassifierLayer(self.hidden_size, num_labels)
 
-        # Other unfreeze_steps
+        # Other unfreeze steps
         self.set_up_other_components(num_labels, num_epochs_freeze, unfreeze_steps, loss, freeze_layers)
 
         # Move model to GPU if available
@@ -62,7 +69,7 @@ class ASBA_PhoBertCustomModel(nn.Module):
         self.unfreeze_steps = unfreeze_steps
         self.current_epoch = 0
         self.current_unfreeze_step = 1
-        self.all_layers_unfrozen = False # Flag to check if all layers are unfrozen
+        self.all_layers_unfrozen = False  # Flag to check if all layers are unfrozen
         self.freeze_layers = freeze_layers
 
     def gradual_unfreeze(self):
@@ -70,11 +77,11 @@ class ASBA_PhoBertCustomModel(nn.Module):
             return
 
         total_layers = len(self.encoder.layer)
-        
+
         start_layer = total_layers - (self.current_unfreeze_step * self.unfreeze_steps)
         end_layer = total_layers - ((self.current_unfreeze_step - 1) * self.unfreeze_steps)
         start_layer = max(start_layer, 0)  # Ensure we don't go below 0
-        
+
         for i in range(start_layer, end_layer):
             for param in self.encoder.layer[i].parameters():
                 param.requires_grad = True
@@ -87,7 +94,8 @@ class ASBA_PhoBertCustomModel(nn.Module):
             self.all_layers_unfrozen = True
 
     def count_epochs(self):
-        if self.freeze_layers == False : return
+        if not self.freeze_layers:
+            return
         if self.current_epoch >= self.num_epochs_freeze:
             print(f'Unfreezing layers gradually')
             self.gradual_unfreeze()
@@ -100,9 +108,13 @@ class ASBA_PhoBertCustomModel(nn.Module):
             # Reshape the attention mask to match the shape required for multi-head attention
             attention_mask = attention_mask[:, None, None, :]  # (batch_size, 1, 1, seq_length)
 
-        encoder_output = self.encoder(embedding_output, attention_mask=attention_mask)[0]
+        encoder_outputs = self.encoder(embedding_output, attention_mask=attention_mask, output_hidden_states=True, output_attentions=True)
+        encoder_output = encoder_outputs.last_hidden_state
+        hidden_states = encoder_outputs.hidden_states
+        attentions = encoder_outputs.attentions
 
-        cls_token = encoder_output[:, 0, :] # Taking the [CLS] token, (batch_size, 768)
-        logits = self.classifier(cls_token) # (batch_size, num_labels * 4)
+        cls_token = encoder_output[:, 0, :]  # Taking the [CLS] token, (batch_size, 768)
+        logits = self.classifier(cls_token)  # (batch_size, num_labels * 4)
+        
         if self.loss == 'cross-entropy':
-          return logits.view(-1, self.num_labels, 4)
+            return logits.view(-1, self.num_labels, 4), hidden_states, attentions
