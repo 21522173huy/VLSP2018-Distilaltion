@@ -101,11 +101,11 @@ def main():
                                               num_labels = train_dataset.num_labels(),
                                               num_layers = args.num_student_layers,)
         
-    teacher_checkpoint = torch.load(args.teacher_checkpoint', map_location='cuda')
+    teacher_checkpoint = torch.load(args.teacher_checkpoint, map_location='cuda')
     load_checkpoint(teacher_model, teacher_checkpoint)
     
     if args.student_checkpoint:
-        student_checkpoint = torch.load(args.student_checkpoint', map_location='cuda')
+        student_checkpoint = torch.load(args.student_checkpoint, map_location='cuda')
         load_checkpoint(student_model, student_checkpoint) 
         
     student_params = sum(p.numel() for p in student_model.parameters() if p.requires_grad)
