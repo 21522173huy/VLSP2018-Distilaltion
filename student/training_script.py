@@ -147,7 +147,7 @@ def main():
                                                                           checkpoint_path = f'student/checkpoints/Student-{args.num_student_layers}Layers-{student_params:.1f}M-{int(args.soft_weight * 100)}{int(args.hard_weight * 100)}-best.pt',
                                                                           result_path = f'student/checkpoints/Student-{args.num_student_layers}Layers-{student_params:.1f}M-{int(args.soft_weight * 100)}{int(args.hard_weight * 100)}-results.json',
                                                                           patience=5, temperature=1,
-                                                                          soft_weight=args.soft_weight, hard_weight=args.hard_weight)
+                                                                          soft_weight=args.soft_weight, hard_weight=args.hard_weight,)
     results = {
         'Train': {
             'Loss': train_loss,
