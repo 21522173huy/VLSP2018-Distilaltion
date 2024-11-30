@@ -214,6 +214,8 @@ def training_student(pred_distill,
     early_stopping = EarlyStopping(patience=patience, verbose=True, path=checkpoint_path)
 
     for epoch in range(epochs):
+        if pred_distill:
+            student_model.count_epochs()
         # Loss and Metrics
         print("Training")
         train_loss, train_metrics = step(student_model, teacher_model, ver, train_dataloader, optimizer, device, temperature, soft_weight, hard_weight, pred_distill, max_grad_norm = 1.0, mode='Train')
