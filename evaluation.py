@@ -22,7 +22,7 @@ def evaluate_model(model, ver, test_dataloader, average = 'macro'):
             input_ids, attention_mask = batch['input_ids'].to('cuda'), batch['attention_mask'].float().to('cuda')
             labels = batch['labels'].to('cuda')
 
-            # Predictions from the teacher model
+            # Predictions from the model
             output, _, _ = model(input_ids, attention_mask=attention_mask)
             
             # Prediction
