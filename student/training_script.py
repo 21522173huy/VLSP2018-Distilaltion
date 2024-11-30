@@ -69,6 +69,10 @@ def main():
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--soft_weight', type=float)
     parser.add_argument('--hard_weight', type=float)
+    parser.add_argument('--freeze_layers', type=str2bool, default=True)
+    parser.add_argument('--gradual_unfreezing', type=str2bool, default=True)
+    parser.add_argument('--num_epochs_freeze', type=int, default=2)
+    parser.add_argument('--unfreeze_steps', type=int, default=1)
     args = parser.parse_args()
 
     # Dataset, Dataloader
@@ -90,16 +94,32 @@ def main():
         from models.roberta_model import ASBA_PhoBertCustomModel
         teacher_model = ASBA_PhoBertCustomModel(roberta_version = args.teacher_name,
                                                 num_labels = train_dataset.num_labels(),)
-        student_model = ASBA_PhoBertCustomModel(roberta_version = args.teacher_name,
-                                                num_labels = train_dataset.num_labels(),
-                                                num_layers = args.num_student_layers,)
+        if args.pred_distill:
+            student_model = ASBA_PhoBertCustomModel(roberta_version = args.model_name, 
+                                                    num_labels = train_dataset.num_labels(),
+                                                    num_layers = args.num_student_layers,
+                                                    num_epochs_freeze = args.num_epochs_freeze,
+                                                    unfreeze_steps = args.unfreeze_steps,
+                                                    freeze_layers = args.freeze_layers,)
+        else:
+            student_model = ASBA_PhoBertCustomModel(roberta_version = args.teacher_name,
+                                                    num_labels = train_dataset.num_labels(),
+                                                    num_layers = args.num_student_layers,)
     else :
         from models.roberta_model_ver2 import VLSP2018MultiTask_Huy
         teacher_model = VLSP2018MultiTask_Huy(roberta_version = args.teacher_name, 
                                               num_labels = train_dataset.num_labels(),)
-        student_model = VLSP2018MultiTask_Huy(roberta_version = args.teacher_name,
-                                              num_labels = train_dataset.num_labels(),
-                                              num_layers = args.num_student_layers,)
+        if args.pred_distill:
+            student_model = VLSP2018MultiTask_Huy(roberta_version = args.teacher_name,
+                                                  num_labels = train_dataset.num_labels(),
+                                                  num_layers = args.num_student_layers,
+                                                  num_epochs_freeze = args.num_epochs_freeze,
+                                                  unfreeze_steps = args.unfreeze_steps,
+                                                  freeze_layers = args.freeze_layers,)
+        else:
+            student_model = VLSP2018MultiTask_Huy(roberta_version = args.teacher_name,
+                                                  num_labels = train_dataset.num_labels(),
+                                                  num_layers = args.num_student_layers,)
         
     teacher_checkpoint = torch.load(args.teacher_checkpoint, map_location='cuda')
     load_checkpoint(teacher_model, teacher_checkpoint)
