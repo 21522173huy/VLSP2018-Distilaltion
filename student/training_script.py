@@ -125,7 +125,7 @@ def main():
     load_checkpoint(teacher_model, teacher_checkpoint)
     
     if args.student_checkpoint != '':
-        student_checkpoint = torch.load(args.student_checkpoint,  map_location=torch.device('cuda'))
+        student_checkpoint = torch.load(args.student_checkpoint, map_location=torch.device('cuda'))
         load_checkpoint(student_model, student_checkpoint) 
         
     student_params = sum(p.numel() for p in student_model.parameters() if p.requires_grad)
