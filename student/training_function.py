@@ -220,7 +220,7 @@ def training_student(pred_distill,
         print("Validating")
         val_loss, val_metrics = step(student_model, teacher_model, ver, val_dataloader, optimizer, device, temperature, soft_weight, hard_weight, pred_distill, max_grad_norm = 1.0, mode='Val')
         print('Testing')
-        results, y_pred, y_true = evaluate_model(student_model, test_dataloader, average = 'macro')
+        results, y_pred, y_true = evaluate_model(student_model, ver, test_dataloader, average = 'macro')
 
         # Obtain Loss and Metrics
         # Obtain Loss and Metrics
