@@ -43,7 +43,7 @@ def single_label_loss(student_logits, teacher_logits, labels, temperature, soft_
     soft_loss = F.kl_div(F.log_softmax(student_logits / temperature, dim=1), soft_targets, reduction='batchmean') * (temperature ** 2)
     
     # Hard targets
-    hard_loss = F.cross_entropy(student_logits, labels)
+    hard_loss = F.cross_entropy(student_logits.mT, labels)
     
     # Combined loss
     loss = soft_weight * soft_loss + hard_weight * hard_loss
