@@ -104,7 +104,8 @@ def main():
         else:
             student_model = ASBA_PhoBertCustomModel(roberta_version = args.teacher_name,
                                                     num_labels = train_dataset.num_labels(),
-                                                    num_layers = args.num_student_layers,)
+                                                    num_layers = args.num_student_layers,
+                                                    freeze_layers = False)
     else :
         from models.roberta_model_ver2 import VLSP2018MultiTask_Huy
         teacher_model = VLSP2018MultiTask_Huy(roberta_version = args.teacher_name, 
@@ -119,7 +120,8 @@ def main():
         else:
             student_model = VLSP2018MultiTask_Huy(roberta_version = args.teacher_name,
                                                   num_labels = train_dataset.num_labels(),
-                                                  num_layers = args.num_student_layers,)
+                                                  num_layers = args.num_student_layers,
+                                                  freeze_layers = False)
         
     teacher_checkpoint = torch.load(args.teacher_checkpoint, map_location=torch.device('cuda'))
     load_checkpoint(teacher_model, teacher_checkpoint)
