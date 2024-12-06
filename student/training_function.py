@@ -8,6 +8,11 @@ import torch.nn.functional as F
 import numpy as np  # Add missing import
 import json
 
+def check_and_set_requires_grad(tensor):
+    if not tensor.requires_grad:
+        tensor.requires_grad_(True)
+    return tensor
+
 def one_hot_encode(tensor):
     # Get the shape of the input tensor
     shape = tensor.shape
@@ -123,10 +128,10 @@ def step(student_model, teacher_model, ver, dataloader, optimizer, device, tempe
                 new_teacher_reps_concat = torch.cat([rep.view(-1) for rep in new_teacher_reps])
 
                 # Require grad for all tensors
-                student_attns_concat.requires_grad = True
-                new_teacher_atts_concat.requires_grad = True
-                student_hidden_states_concat.requires_grad = True
-                new_teacher_reps_concat.requires_grad = True
+                student_attns_concat = check_and_set_requires_grad(student_attns_concat)
+                new_teacher_atts_concat = check_and_set_requires_grad(new_teacher_atts_concat)
+                student_hidden_states_concat = check_and_set_requires_grad(student_hidden_states_concat)
+                new_teacher_reps_concat = check_and_set_requires_grad(new_teacher_reps_concat)
 
                 # Calculate MSE loss
                 att_loss = criterion(student_attns_concat, new_teacher_atts_concat)
