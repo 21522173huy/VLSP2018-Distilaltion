@@ -118,4 +118,4 @@ class ASBA_PhoBertCustomModel(nn.Module):
         logits = self.classifier(cls_token)  # (batch_size, num_labels * 4)
         
         if self.loss == 'cross-entropy':
-            return logits.view(-1, self.num_labels, 4), hidden_states, attentions
+            return logits.view(-1, self.num_labels, 4), attentions, hidden_states
