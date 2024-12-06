@@ -95,7 +95,7 @@ def main():
         teacher_model = ASBA_PhoBertCustomModel(roberta_version = args.teacher_name,
                                                 num_labels = train_dataset.num_labels(),)
         if args.pred_distill:
-            student_model = ASBA_PhoBertCustomModel(roberta_version = args.model_name, 
+            student_model = ASBA_PhoBertCustomModel(roberta_version = args.teacher_name, 
                                                     num_labels = train_dataset.num_labels(),
                                                     num_layers = args.num_student_layers,
                                                     num_epochs_freeze = args.num_epochs_freeze,
